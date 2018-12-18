@@ -13,7 +13,7 @@ class Router(object):
         self.ports = dict()
         self.table = {
             self.name: {
-                'towards': None,
+                'neighbor': None,
                 'hops': 0
             }
         }
@@ -74,18 +74,19 @@ class Router(object):
                 self._success(message['data'])
             else:
                 # Randomly choose a port to forward
-                port = self.table[message['destination']]['towards']
+                port = self.table[message['destination']]['neighbor']
                 self._log("Forwarding to port {}".format(port))
                 self.ports[port].send_packet(packet)
-        elif 'source' in message and 'data' in message:
-            for key, value in message.data.items():
-                if self.table[key]:
-                    if value.hops + 1 < self.table[key]['hops']:
-                        self.table[key]['hops'] = value.hops + 1
+        elif 'source' in message and 'table' in message:
+            for key in message['table']:
+                if key in self.table:
+                    if int(key['hops']) + 1 < self.table[key]['hops']:
+                        self.table[key]['neighbor'] = message['source']
+                        self.table[key]['hops'] = int(key['hops']) + 1
                 else:
                     self.table[key] = {
-                        'towards': message.source,
-                        'hops': value.hops + 1
+                        'neighbor': message['source'],
+                        'hops': int(key['hops']) + 1
                     }
         else:
             self._log("Malformed packet")

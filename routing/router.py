@@ -11,6 +11,12 @@ class Router(object):
         self.name = name
         self.update_time = update_time
         self.ports = dict()
+        self.table = {
+            self.name: {
+                'towards': None,
+                'hops': 0
+            }
+        }
         self._init_ports(ports)
         self.timer = None
         self.logging = logging
@@ -71,6 +77,16 @@ class Router(object):
                 port = choice(list(self.ports.keys()))
                 self._log("Forwarding to port {}".format(port))
                 self.ports[port].send_packet(packet)
+        elif 'source' in message and 'data' in message:
+            for key, value in message.data.items():
+                if self.table[key]:
+                    if value.hops + 1 < self.table[key]['hops']:
+                        self.table[key]['hops'] = value.hops + 1
+                else:
+                    self.table[key] = {
+                        'towards': message.source,
+                        'hops': value.hops + 1
+                    }
         else:
             self._log("Malformed packet")
 

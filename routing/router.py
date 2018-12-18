@@ -74,7 +74,7 @@ class Router(object):
                 self._success(message['data'])
             else:
                 # Randomly choose a port to forward
-                port = choice(list(self.ports.keys()))
+                port = self.table[message['destination']]['towards']
                 self._log("Forwarding to port {}".format(port))
                 self.ports[port].send_packet(packet)
         elif 'source' in message and 'data' in message:

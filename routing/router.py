@@ -12,10 +12,7 @@ class Router(object):
         self.update_time = update_time
         self.ports = dict()
         self.table = {
-            self.name: {
-                'neighbor': None,
-                'hops': 0
-            }
+            self.name: [None, 0]
         }
         self._init_ports(ports)
         self.timer = None
@@ -74,22 +71,30 @@ class Router(object):
                 self._success(message['data'])
             else:
                 # Randomly choose a port to forward
-                port = self.table[message['destination']]['neighbor']
+                port = self.table[message['destination']][0]
                 self._log("Forwarding to port {}".format(port))
                 self.ports[port].send_packet(packet)
         elif 'source' in message and 'table' in message:
-            for key in message['table']:
+            tab = message['table']
+            for key in tab:
                 if key in self.table:
-                    if int(key['hops']) + 1 < self.table[key]['hops']:
-                        self.table[key]['neighbor'] = message['source']
-                        self.table[key]['hops'] = int(key['hops']) + 1
+                    if int(tab[key][1]) + 1 < self.table[key][1]:
+                        self.table[key][0] = message['source']
+                        self.table[key][1] = int(tab[key][1]) + 1
                 else:
-                    self.table[key] = {
-                        'neighbor': message['source'],
-                        'hops': int(key['hops']) + 1
-                    }
+                    self.table[key] = [message['source'], int(tab[key][1]) + 1]
         else:
             self._log("Malformed packet")
+
+        print(self.table)
+
+    def _send_table(self):
+        for p in self.ports:
+            message = json.dumps({
+                'source': self.ports[p].input_port,
+                'table': self.table
+            })
+            self.ports[p].send_packet()
 
     def _broadcast(self):
         """

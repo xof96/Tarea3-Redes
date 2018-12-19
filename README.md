@@ -10,7 +10,13 @@ Es exactamente lo mismo:
     import json
     routers = start('topology.json')
     send_packet(4321, json.dumps({'destination': "Router#1", 'data': "mensaje"}))
-    
+Así el Router#2 envía un paquete al Router#1, si se 
+quiere enviar otro paquete basta con cambiar el 
+puerto de output por el que se quiere enviar el paquete (si se envía un paquete 
+por un camino que no es el óptimo el paquete será reenviado al 
+que lo envió originalmente por el router
+que recibió el paquete).
+
 **IMPORTANTE:** Dado que el tiempo que se demora
 en mandarse las tablas, y dado que en la primera iteración
 no todos los routers reciben la info correctamente, es recomendado
@@ -21,5 +27,8 @@ comenzar a enviar los mensajes.
 correjido, modificando parte del archivo topology.py, sin embargo,
 se le consultó a la profesora, y respondió que ese problema no era 
 de gran importancia, por lo que se prefirió dejar la tarea como estaba, 
-para que no hubiera confusión al momento de correjir el código. 
+para que no hubiera confusión al momento de correjir el código. Así,
+hay routers que no participan en la primera iteración debido a que aún
+no han sido inicializados, pero participan en iteraciones posteriores,
+por lo que el protocolo sólo demora un poco más en converger.
 

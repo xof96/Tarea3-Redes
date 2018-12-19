@@ -10,6 +10,7 @@ Es exactamente lo mismo:
     import json
     routers = start('topology.json')
     send_packet(4321, json.dumps({'destination': "Router#1", 'data': "mensaje"}))
+
 Así el Router#2 envía un paquete al Router#1, si se 
 quiere enviar otro paquete basta con cambiar el 
 puerto de output por el que se quiere enviar el paquete (si se envía un paquete 
@@ -32,3 +33,10 @@ hay routers que no participan en la primera iteración debido a que aún
 no han sido inicializados, pero participan en iteraciones posteriores,
 por lo que el protocolo sólo demora un poco más en converger.
 
+
+
+<br><br><br><br>
+
+_Integrantes_:
+* Javier Muñoz Carvajal
+* Matías Pizarro Orellana

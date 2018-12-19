@@ -3,6 +3,7 @@ from json import JSONDecodeError
 from random import choice
 from threading import Timer
 
+import send_packet
 from routing.router_port import RouterPort
 
 
@@ -10,6 +11,7 @@ class Router(object):
     def __init__(self, name, update_time, ports, logging=True):
         self.name = name
         self.update_time = update_time
+        self.table_sending_time = 30
         self.ports = dict()
         self.table = {
             self.name: [None, 0]
@@ -94,7 +96,9 @@ class Router(object):
                 'source': self.ports[p].input_port,
                 'table': self.table
             })
-            self.ports[p].send_packet()
+            self.ports[p].send_packet(message.encode())
+        self.table_timer = Timer(self.table_sending_time, lambda: self._send_table())
+        self.table_timer.start()
 
     def _broadcast(self):
         """
@@ -112,6 +116,7 @@ class Router(object):
         """
         self._log("Starting")
         self._broadcast()
+        self._send_table()
         for port in self.ports.values():
             port.start()
 

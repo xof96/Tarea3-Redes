@@ -1,10 +1,6 @@
 import json
-import time
 from json import JSONDecodeError
-from random import choice
 from threading import Timer
-
-import send_packet
 from routing.router_port import RouterPort
 
 
@@ -12,10 +8,10 @@ class Router(object):
     def __init__(self, name, update_time, ports, logging=True):
         self.name = name
         self.update_time = update_time
-        self.table_sending_time = 10
+        self.table_sending_time = 30  # Intervalo de tiempo en que se manda la tabla del router a los vecinos.
         self.ports = dict()
-        self.table = {
-            self.name: [None, 0]
+        self.table = {  # Tabla inicial de cada router.
+            self.name: [None, 0]  # Nombre : [Puerto, Hops]
         }
         self._init_ports(ports)
         self.timer = None
@@ -77,29 +73,31 @@ class Router(object):
                 port = self.table[message['destination']][0]
                 self._log("Forwarding to port {}".format(port))
                 self.ports[port].send_packet(packet)
-        elif 'source' in message and 'table' in message:
+        elif 'source' in message and 'table' in message:  #Caso en que recibe una tabla de rutas.
             tab = message['table']
             for key in tab:
-                if key in self.table:
+                if key in self.table:  # Si está en la tabla, entonces solo la actualiza si le llega algo mejor.
                     if int(tab[key][1]) + 1 < self.table[key][1]:
                         self.table[key][0] = message['source']
                         self.table[key][1] = int(tab[key][1]) + 1
-                else:
+                else:  # Si no está en la tabla, entonces lo agrega.
                     self.table[key] = [message['source'], int(tab[key][1]) + 1]
+            self._log("Mi tabla ahora es:\n\t{}".format(self.table))
         else:
             self._log("Malformed packet")
 
-        print(self.table)
-
     def _send_table(self):
+        """
+        Sends table of distance vectors to their neighbors.
+        :return: None
+        """
         for p in self.ports:
-            self._log("Enviaré al puerto %s" % p)
+            # Se crea el mensaje con la información de la tabla de rutas.
             message = json.dumps({
                 'source': self.ports[p].input_port,
                 'table': self.table
             })
             self.ports[p].send_packet(message.encode())
-            time.sleep(0.2)
         self.table_timer = Timer(self.table_sending_time, lambda: self._send_table())
         self.table_timer.start()
 
@@ -118,9 +116,11 @@ class Router(object):
         :return: None
         """
         self._log("Starting")
-        # self._broadcast()
+        self._broadcast()
         for port in self.ports.values():
             port.start()
+        # Ahora se envía la tabla a los vecinos, es posible que en la primera iteración, los
+        # routers que no tengan sus puertos inicializados aún, no puedan recibir esta información.
         self._send_table()
 
     def stop(self):
